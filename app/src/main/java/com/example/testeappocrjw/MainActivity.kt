@@ -1,10 +1,13 @@
 package com.example.testeappocrjw
 
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +21,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -62,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             val preview = Preview.Builder()
                 .build()
                 .also {
-                    it.setSurfaceProvider(findViewById<PreviewView>(R.id.viewFinder).surfaceProvider)
+                    it.surfaceProvider = findViewById<PreviewView>(R.id.viewFinder).surfaceProvider
                 }
 
             // Configuração de captura de imagem
@@ -104,9 +110,25 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(photoFile)
                     Toast.makeText(baseContext, "Imagem salva em: $savedUri", Toast.LENGTH_SHORT).show()
+                    val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+                    extractTextFromImage(bitmap)
                 }
             }
         )
+
+    }
+
+    private fun extractTextFromImage(imageBitmap: Bitmap) {
+        val image = InputImage.fromBitmap(imageBitmap, 0)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+        recognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                findViewById<TextView>(R.id.textViewResult).text = visionText.text
+            }
+            .addOnFailureListener { e ->
+                findViewById<TextView>(R.id.textViewResult).text = "Erro ao reconhecer texto: ${e.message}"
+            }
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
