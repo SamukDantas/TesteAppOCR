@@ -29,9 +29,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-
-    private val REQUEST_IMAGE_CAPTURE = 1
-    private lateinit var imageCapture: ImageCapture
+    
+    private lateinit var capturaImagem: ImageCapture
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,94 +43,82 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        if (allPermissionsGranted()) {
-            startCamera()
+        if (isPermissoesAutorizadas()) {
+            iniciarCamera()
         } else {
             ActivityCompat.requestPermissions(
-                this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS
+                this, PERMISSOES_REQUERIDAS, REQUISICAO_CODIGO_PERMISSAO
             )
         }
 
-        val captureButton = findViewById<Button>(R.id.buttonCapture)
-        captureButton.setOnClickListener { takePhoto() }
-
+        val botaoTirarFoto = findViewById<Button>(R.id.botaoTirarFoto)
+        botaoTirarFoto.setOnClickListener { dispararFoto() }
     }
 
-    private fun startCamera() {
+    private fun iniciarCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
-            // Inicializa o CameraProvider
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            // Configura o preview
+            val provedorCamera: ProcessCameraProvider = cameraProviderFuture.get()
             val preview = Preview.Builder()
                 .build()
                 .also {
-                    it.surfaceProvider = findViewById<PreviewView>(R.id.viewFinder).surfaceProvider
+                    it.surfaceProvider = findViewById<PreviewView>(R.id.viewLocalizadorCamera).surfaceProvider
                 }
-
-            // Configuração de captura de imagem
-            imageCapture = ImageCapture.Builder().build()
-
-            // Seleciona a câmera traseira como padrão
+            capturaImagem = ImageCapture.Builder().build()
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
-                // Abre a câmera
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture
+                provedorCamera.unbindAll()
+                provedorCamera.bindToLifecycle(
+                    this, cameraSelector, preview, capturaImagem
                 )
             } catch (exc: Exception) {
                 Log.e(TAG, "Erro ao abrir a câmera: ${exc.message}", exc)
             }
-
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun takePhoto() {
-        // Cria um arquivo temporário para armazenar a foto
-        val photoFile = File(
-            outputDirectory,
-            SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+    private fun dispararFoto() {
+        val arquivoFoto = File(
+            diretorioSaida,
+            SimpleDateFormat(FORMATO_NOME_ARQUIVO, Locale("pt", "BR"))
                 .format(System.currentTimeMillis()) + ".jpg"
         )
 
-        // Opções de saída de imagem
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        val saidaOpcoes = ImageCapture.OutputFileOptions.Builder(arquivoFoto).build()
 
-        imageCapture.takePicture(
-            outputOptions, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
+        capturaImagem.takePicture(
+            saidaOpcoes, ContextCompat.getMainExecutor(this), object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Erro ao salvar a imagem: ${exc.message}", exc)
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    val savedUri = Uri.fromFile(photoFile)
+                    val savedUri = Uri.fromFile(arquivoFoto)
                     Toast.makeText(baseContext, "Imagem salva em: $savedUri", Toast.LENGTH_SHORT).show()
-                    val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
-                    extractTextFromImage(bitmap)
+                    val bitmap = BitmapFactory.decodeFile(arquivoFoto.absolutePath)
+                    extrairTextoDaImagem(bitmap)
                 }
             }
         )
 
     }
 
-    private fun extractTextFromImage(imageBitmap: Bitmap) {
+    private fun extrairTextoDaImagem(imageBitmap: Bitmap) {
         val image = InputImage.fromBitmap(imageBitmap, 0)
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
         recognizer.process(image)
             .addOnSuccessListener { visionText ->
-                findViewById<TextView>(R.id.textViewResult).text = visionText.text
+                findViewById<TextView>(R.id.textoViewResultado).text = visionText.text
             }
             .addOnFailureListener { e ->
-                findViewById<TextView>(R.id.textViewResult).text = "Erro ao reconhecer texto: ${e.message}"
+                findViewById<TextView>(R.id.textoViewResultado).text = "Erro ao reconhecer texto: ${e.message}"
             }
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+    private fun isPermissoesAutorizadas() = PERMISSOES_REQUERIDAS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
@@ -139,9 +126,9 @@ class MainActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (allPermissionsGranted()) {
-                startCamera()
+        if (requestCode == REQUISICAO_CODIGO_PERMISSAO) {
+            if (isPermissoesAutorizadas()) {
+                iniciarCamera()
             } else {
                 Toast.makeText(this, "Permissão negada", Toast.LENGTH_SHORT).show()
                 finish()
@@ -149,27 +136,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Define o diretório de saída para as imagens capturadas
-    // Usando a palavra-chave 'by lazy' para definir a variável 'outputDirectory'
-    val outputDirectory: File by lazy {
-        createOutputDirectory() // Chama a função para criar o diretório
-    }
+    val diretorioSaida: File by lazy { criarDiretorioSaida() }
 
-    // Função para criar e retornar o diretório de saída
-    private fun createOutputDirectory(): File {
-        // Usa o diretório de mídia externo se disponível, senão o diretório interno privado
-        val mediaDir = externalMediaDirs.firstOrNull()?.let {
+    private fun criarDiretorioSaida(): File {
+        val diretorioMidia = externalMediaDirs.firstOrNull()?.let {
             File(it, resources.getString(R.string.app_name)).apply { mkdirs() }
         }
 
-        // Retorna o diretório ou, se não for possível usar o diretório externo, usa o interno
-        return mediaDir?.takeIf { it.exists() } ?: filesDir
+        return diretorioMidia?.takeIf { it.exists() } ?: filesDir
     }
 
     companion object {
         private const val TAG = "CameraXApp"
-        private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-        private const val REQUEST_CODE_PERMISSIONS = 10
-        private val REQUIRED_PERMISSIONS = arrayOf(android.Manifest.permission.CAMERA)
+        private const val FORMATO_NOME_ARQUIVO = "dd-MM-yyyy-HH-mm-ss-SSS"
+        private const val REQUISICAO_CODIGO_PERMISSAO = 10
+        private val PERMISSOES_REQUERIDAS = arrayOf(android.Manifest.permission.CAMERA)
     }
 }
