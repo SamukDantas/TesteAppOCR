@@ -12,7 +12,7 @@ import com.example.testeappocrjw.camera.CameraHandlerImpl
 import com.example.testeappocrjw.camera.CameraHandlerInterface
 import com.example.testeappocrjw.permissoes.PermissaoHandlerImpl
 import com.example.testeappocrjw.permissoes.PermissaoHandlerInterface
-import com.example.testeappocrjw.reconhecimentotexto.TextoExtrator
+import com.example.testeappocrjw.reconhecimentotexto.TextoExtratorImpl
 import com.example.testeappocrjw.reconhecimentotexto.TextoExtratorInterface
 
 class MainActivity : AppCompatActivity() {
@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
         configurarEdgeInsets()
 
         permissaoHandler = PermissaoHandlerImpl(this)
-        textoExtrator = TextoExtrator(findViewById(R.id.textoViewResultado))
+        textoExtrator = TextoExtratorImpl(findViewById(R.id.textoViewResultado))
 
         if (permissaoHandler.isPermissoesAutorizadas()) {
             iniciarCamera()

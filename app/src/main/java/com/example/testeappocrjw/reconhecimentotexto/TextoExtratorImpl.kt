@@ -6,7 +6,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
-class TextoExtrator(private val resultTextView: TextView) : TextoExtratorInterface {
+class TextoExtratorImpl(private val resultTextView: TextView) : TextoExtratorInterface {
 
     override fun extrairTexto(imagemCapturada: Bitmap) {
         val imagem = InputImage.fromBitmap(imagemCapturada, 0)
