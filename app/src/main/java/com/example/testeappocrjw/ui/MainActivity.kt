@@ -8,17 +8,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.testeappocrjw.R
-import com.example.testeappocrjw.camera.CameraHandler
-import com.example.testeappocrjw.camera.DiretorioHandler
-import com.example.testeappocrjw.permissoes.PermissaoHandler
+import com.example.testeappocrjw.camera.CameraHandlerImpl
+import com.example.testeappocrjw.camera.CameraHandlerInterface
+import com.example.testeappocrjw.permissoes.PermissaoHandlerImpl
+import com.example.testeappocrjw.permissoes.PermissaoHandlerInterface
 import com.example.testeappocrjw.reconhecimentotexto.TextoExtrator
+import com.example.testeappocrjw.reconhecimentotexto.TextoExtratorInterface
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var cameraHandler: CameraHandler
-    private lateinit var permissaoHandler: PermissaoHandler
-    private lateinit var textoExtrator: TextoExtrator
-    private lateinit var diretorioHandler: DiretorioHandler
+    private lateinit var cameraHandler: CameraHandlerInterface
+    private lateinit var permissaoHandler: PermissaoHandlerInterface
+    private lateinit var textoExtrator: TextoExtratorInterface
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,8 +28,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         configurarEdgeInsets()
 
-        permissaoHandler = PermissaoHandler(this)
-        diretorioHandler = DiretorioHandler(this)
+        permissaoHandler = PermissaoHandlerImpl(this)
         textoExtrator = TextoExtrator(findViewById(R.id.textoViewResultado))
 
         if (permissaoHandler.isPermissoesAutorizadas()) {
@@ -53,11 +53,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun iniciarCamera() {
-        cameraHandler = CameraHandler(this, findViewById(R.id.viewLocalizadorCamera), diretorioHandler)
+        cameraHandler = CameraHandlerImpl(this, findViewById(R.id.viewLocalizadorCamera))
         cameraHandler.iniciarCamera()
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (permissaoHandler.handlePermissoesResultado(requestCode, grantResults)) {
             iniciarCamera()

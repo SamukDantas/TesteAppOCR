@@ -5,17 +5,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
-class PermissaoHandler(private val activity: AppCompatActivity) {
+class PermissaoHandlerImpl(private val activity: AppCompatActivity) : PermissaoHandlerInterface {
 
-    fun isPermissoesAutorizadas(): Boolean = PERMISSOES_REQUERIDAS.all {
+    override fun isPermissoesAutorizadas(): Boolean = PERMISSOES_REQUERIDAS.all {
         ContextCompat.checkSelfPermission(activity.baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun solicitarPermissoes() {
+    override fun solicitarPermissoes() {
         ActivityCompat.requestPermissions(activity, PERMISSOES_REQUERIDAS, REQUISICAO_CODIGO_PERMISSAO)
     }
 
-    fun handlePermissoesResultado(codigoRequisicao: Int, concederResultados: IntArray): Boolean {
+    override fun handlePermissoesResultado(codigoRequisicao: Int, concederResultados: IntArray): Boolean {
         return codigoRequisicao == REQUISICAO_CODIGO_PERMISSAO && concederResultados.all { it == PackageManager.PERMISSION_GRANTED }
     }
 

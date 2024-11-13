@@ -1,14 +1,12 @@
-package com.example.testeappocrjw.camera
+package com.example.testeappocrjw.utils
 
 import androidx.appcompat.app.AppCompatActivity
 import com.example.testeappocrjw.R
 import java.io.File
 
-class DiretorioHandler(private val activity: AppCompatActivity) {
+object DiretorioUtils {
 
-    val diretorioSaida: File by lazy { criarDiretorioSaida() }
-
-    private fun criarDiretorioSaida(): File {
+    fun obterDiretorioSaida(activity: AppCompatActivity): File {
         val mediaDir = activity.externalMediaDirs.firstOrNull()?.let {
             File(it, activity.resources.getString(R.string.app_name)).apply { mkdirs() }
         }

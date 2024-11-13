@@ -13,18 +13,18 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.example.testeappocrjw.utils.DiretorioUtils
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class CameraHandler(
+class CameraHandlerImpl(
     private val activity: AppCompatActivity,
-    private val previewView: PreviewView,
-    private val diretorioHandler: DiretorioHandler
-) {
+    private val previewView: PreviewView
+) : CameraHandlerInterface {
     private lateinit var imagemCaptura: ImageCapture
 
-    fun iniciarCamera() {
+    override fun iniciarCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(activity)
 
         cameraProviderFuture.addListener({
@@ -44,16 +44,21 @@ class CameraHandler(
         }, ContextCompat.getMainExecutor(activity))
     }
 
-    fun tirarFoto(fotoCapturada: (Bitmap) -> Unit) {
+    override fun tirarFoto(fotoCapturada: (Bitmap) -> Unit) {
         val arquivoFoto = File(
-            diretorioHandler.diretorioSaida,
-            SimpleDateFormat(FORMATO_NOME_ARQUIVO, Locale("pt", "BR")).format(System.currentTimeMillis()) + ".jpg"
+            DiretorioUtils.obterDiretorioSaida(activity),
+            SimpleDateFormat(
+                FORMATO_NOME_ARQUIVO,
+                Locale("pt", "BR")
+            ).format(System.currentTimeMillis()) + ".jpg"
         )
 
         val saidaOpcoes = ImageCapture.OutputFileOptions.Builder(arquivoFoto).build()
 
         imagemCaptura.takePicture(
-            saidaOpcoes, ContextCompat.getMainExecutor(activity), object : ImageCapture.OnImageSavedCallback {
+            saidaOpcoes,
+            ContextCompat.getMainExecutor(activity),
+            object : ImageCapture.OnImageSavedCallback {
 
                 override fun onError(exc: ImageCaptureException) {
                     Log.e(TAG, "Erro ao salvar a imagem: ${exc.message}", exc)
@@ -61,7 +66,8 @@ class CameraHandler(
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val uriSalva = Uri.fromFile(arquivoFoto)
-                    Toast.makeText(activity, "Imagem salva em: $uriSalva", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, "Imagem salva em: $uriSalva", Toast.LENGTH_SHORT)
+                        .show()
 
                     val bitmap = BitmapFactory.decodeFile(arquivoFoto.absolutePath)
                     fotoCapturada(bitmap)
